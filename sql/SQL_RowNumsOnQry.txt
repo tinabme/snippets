@@ -1,0 +1,10 @@
+A quick way to add row number to a resultset is to wrap the entire query as a sub query and add row_number in the outer query.
+
+select *, row_number() over(order by (select 0)) as rn
+from
+  (  -- YOUR QUERY HERE
+    select distinct -- your columns
+    from YourTable
+  ) as T
+
+order by -- YOUR ORDER BY HERE

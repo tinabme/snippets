@@ -1,0 +1,110 @@
+
+-- =============================================
+-- Name: listGetAt
+-- Description:	Grabs the text value from a string/list for a specified place with a specified delimiter.
+-- Usage: dbo.ListGetAt( 'dog,cat,mouse,cheese', 3, ',' )  => returns mouse  OR  dbo.ListGetAt( '08-16-1984', 2, '-' ) => returns 16
+-- Created By: Tina Barfield => 09/21/2012
+-- =============================================
+
+SCENARIOS:
+Need to get the third value in a list or string
+
+Variables:
+@thelist = '9844750,0.00,ttttt,ddddd,,ggggg' 
+@place = 3
+@delimiter = ',' 
+
+returns: ttttt
+
+-------------------------
+Or
+
+Variables:
+@thelist = 'The Big Brown Dog Ran Fast'
+@place = 3
+@delimiter = ' '
+
+returns: Brown
+
+
+HOW TO USE:
+
+Add the function (See FUNCTION below) and call the function from your sql query 
+as dbo.ListGetAt( thelist,place,delimiter) i.e.: dbo.ListGetAt( 'The Big Brown Dog Ran Fast',3,' ')
+
+OR 
+
+Code it directly in your query (See IN-QUERY Below)
+
+
+----------------------------------------------------------
+FUNCTION
+----------------------------------------------------------
+
+CREATE FUNCTION [dbo].[ListGetAt]
+	(
+	  @thelist VARCHAR(max), @place INT, @delimiter VARCHAR(max)
+	)
+
+	RETURNS VARCHAR(max)
+	AS
+	BEGIN
+	 
+	  DECLARE @position AS INT, @stringvalue AS VARCHAR(max), @counter AS INT, @position_count INT
+
+	  SET @position_count = LEN(@thelist) - LEN(REPLACE(@thelist, @delimiter,'')) + 1
+	  SET @stringvalue = ''
+
+	  IF @position_count >= @place
+	     BEGIN
+			  SELECT @thelist = @thelist + @delimiter,
+					 @counter = 1,
+					 @position = 0,
+					 @stringvalue = ''
+	 
+			  WHILE ( PATINDEX('%' + @delimiter + '%' , @thelist ) <> 0) AND ( @place + 1 <> @counter )
+			  BEGIN
+				SELECT @position = PATINDEX('%' + @delimiter + '%' , @thelist),
+					   @stringvalue    = LEFT(@thelist, @position-1),
+					   @thelist   = STUFF(@thelist, 1, @position, null),
+					   @counter  = @counter + 1
+			  END
+		 END
+
+
+	  RETURN @stringvalue
+	END
+GO
+
+
+----------------------------------------------------------
+IN-QUERY
+----------------------------------------------------------
+
+DECLARE @position AS INT, @stringvalue AS VARCHAR(max), @counter AS INT, @position_count INT, @thelist VARCHAR(max), @place INT, @delimiter VARCHAR(10)
+
+SET @thelist = '9844750,0.00,ttttt,ddddd,,ggggg'  -- the list of data
+SET @place = 3                                    -- the place you want to select
+SET @delimiter = ','                              -- the list delimeter
+
+SET @position_count = LEN(@thelist) - LEN(REPLACE(@thelist, @delimiter,'')) + 1
+SET @stringvalue = ''
+
+IF @position_count >= @place
+	BEGIN
+		SELECT @thelist = @thelist + @delimiter,
+				@counter = 1,
+				@position = 0,
+				@stringvalue = ''
+	 
+		WHILE ( PATINDEX('%' + @delimiter + '%' , @thelist ) <> 0) AND ( @place + 1 <> @counter )
+		BEGIN
+		SELECT @position = PATINDEX('%' + @delimiter + '%' , @thelist),
+				@stringvalue    = LEFT(@thelist, @position-1),
+				@thelist   = STUFF(@thelist, 1, @position, null),
+				@counter  = @counter + 1
+		END
+	END
+
+
+select @stringvalue

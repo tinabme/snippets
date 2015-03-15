@@ -1,0 +1,88 @@
+
+
+-- =============================================
+-- Name:fnDataClean
+-- Description:	returns cleaned data based on type applied 
+-- Types: can be num, alpha, alnum, cname (alnum with space comma period and dash)
+-- Usage: dbo.fnDataClean(data,type) 
+--        i.e.:dbo.fnDataClean('(813) 555 - 5555',alnum)   =>returns 8135555555
+-- Created By: Tina Barfield 06-02-2011
+-- =============================================
+
+----------------------------------------------------------
+FUNCTION
+----------------------------------------------------------
+CREATE Function [dbo].[fnDataClean](@Temp VarChar(2000), @Type VarChar(5))
+Returns VarChar(2000)
+AS
+	BEGIN
+
+		If @Type = 'num'
+			Begin
+				While PatIndex('%[^0-9]%', @Temp) > 0
+					Set @Temp = Stuff(@Temp, PatIndex('%[^0-9]%', @Temp), 1, '')
+					--Set @Temp = replace(@temp,',','||')
+			End
+		Else If @Type = 'alpha'
+			Begin
+				While PatIndex('%[^a-z]%', @Temp) > 0
+					Set @Temp = Stuff(@Temp, PatIndex('%[^a-z]%', @Temp), 1, '')
+					--Set @Temp = replace(@temp,',','||')
+			End
+		Else If @Type = 'alnum'
+			Begin
+				While PatIndex('%[^a-z0-9]%', @Temp) > 0
+					Set @Temp = Stuff(@Temp, PatIndex('%[^a-z0-9]%', @Temp), 1, '')
+					--Set @Temp = replace(@temp,',','||')
+			End
+		Else If @Type = 'cname'
+			Begin
+				While PatIndex('%[^a-z0-9 \-\.\,]%', @Temp) > 0
+					Set @Temp = Stuff(@Temp, PatIndex('%[^a-z0-9 \-\.\,]%', @Temp), 1, '')
+					--Set @Temp = replace(@temp,',','||')
+			End
+		Else If @Type = 'addr'
+			Begin
+				set @Temp = replace(
+								replace(
+									replace(
+										replace(	
+											replace(
+												replace(
+													replace(
+														replace(
+															replace(
+																replace(
+																	replace(
+																		replace(@Temp,'street','ST')
+																					,'drive','DR')
+																						,'road','RD')
+																							,'Avenue','AVE')
+																								,'place','PL')
+																									,'boulevard','BLVD')
+																										,'circle','CIR')
+																											,'terrace','TER')
+																												,'highway','HWY')
+																													,'.',' ')
+																														,',',' ')
+																															,'  ',' ')
+				While PatIndex('%[^a-z0-9 \-]%', @Temp) > 0
+					Set @Temp = Stuff(@Temp, PatIndex('%[^a-z0-9 \-]%', @Temp), 1, ' ')
+					Set @Temp = replace(@Temp,'  ',' ')
+					Set @Temp = replace(@Temp,'  ',' ')
+					--Set @Temp = replace(@temp,',','||')
+			End
+		
+		Return @TEmp
+	END
+
+
+
+----------------------------------------------------------
+USAGE
+----------------------------------------------------------
+
+dbo.fnDataClean(data,type) 
+
+EXAMPLE:
+dbo.fnDataClean('(813) 555 - 5555',alnum)   =>returns 8135555555

@@ -1,0 +1,88 @@
+
+-- =============================================
+-- Name: RegexReplace
+-- Description:	SQL RegEx Replace Function - Uses RegEx pattern to replace data in a string ot field
+-- Usage: dbo.RegexReplace('<(?:[^>’’”]*|([‘’”]).*?\1)*>’,’’,FIELDNAME,1,1)
+-- =============================================
+
+----------------------------------------------------------
+FUNCTION
+----------------------------------------------------------
+
+IF OBJECT_ID(N'dbo.RegexReplace') IS NOT NULL 
+   DROP FUNCTION dbo.RegexReplace
+GO
+
+CREATE FUNCTION dbo.RegexReplace
+(
+  @pattern VARCHAR(255),
+  @replacement VARCHAR(255),
+  @fieldname VARCHAR(MAX),
+  @global BIT = 1,
+ @Multiline bit =1
+)
+RETURNS VARCHAR(MAX)
+
+AS BEGIN
+DECLARE @objRegexExp INT,
+    @objErrorObject INT,
+    @strErrorMessage VARCHAR(255),
+    @Substituted VARCHAR(8000),
+    @hr INT,
+    @Replace BIT
+
+SELECT  @strErrorMessage = 'creating a regex object'
+EXEC @hr= sp_OACreate 'VBScript.RegExp', @objRegexExp OUT
+IF @hr = 0 
+    SELECT  @strErrorMessage = 'Setting the Regex pattern',
+            @objErrorObject = @objRegexExp
+IF @hr = 0 
+    EXEC @hr= sp_OASetProperty @objRegexExp, 'Pattern', @pattern
+IF @hr = 0 /*By default, the regular expression is case sensitive. Set the IgnoreCase property to True to make it case insensitive.*/
+    SELECT  @strErrorMessage = 'Specifying the type of match' 
+IF @hr = 0 
+    EXEC @hr= sp_OASetProperty @objRegexExp, 'IgnoreCase', 1
+IF @hr = 0 
+    EXEC @hr= sp_OASetProperty @objRegexExp, 'MultiLine', @Multiline
+IF @hr = 0 
+    EXEC @hr= sp_OASetProperty @objRegexExp, 'Global', @global
+IF @hr = 0 
+    SELECT  @strErrorMessage = 'Doing a Replacement' 
+IF @hr = 0 
+    EXEC @hr= sp_OAMethod @objRegexExp, 'Replace', @Substituted OUT,
+        @fieldname, @Replacement
+ /*If the RegExp.Global property is False (the default), Replace will return the @fieldname string with the first regex match (if any) substituted with the replacement text. If RegExp.Global is true, the @fieldname string will be returned with all matches replaced.*/   
+IF @hr <> 0 
+    BEGIN
+        DECLARE @Source VARCHAR(255),
+            @Description VARCHAR(255),
+            @Helpfile VARCHAR(255),
+            @HelpID INT
+
+        EXECUTE sp_OAGetErrorInfo @objErrorObject, @source OUTPUT,
+            @Description OUTPUT, @Helpfile OUTPUT, @HelpID OUTPUT
+        SELECT  @strErrorMessage = 'Error whilst '
+                + COALESCE(@strErrorMessage, 'doing something') + ', '
+                + COALESCE(@Description, '')
+        RETURN @strErrorMessage
+    END
+EXEC sp_OADestroy @objRegexExp
+RETURN @Substituted
+END
+Go
+
+
+----------------------------------------------------------
+USAGE 
+----------------------------------------------------------
+dbo.RegexReplace(regex-pattern,replace-with,fieldName,1,1)
+
+EXAMPLE:
+
+select item, dbo.RegexReplace('<(?:[^>''"]*|([''"]).*?\1)*>',
+ '',fieldName,1,1)
+from catalog
+
+
+
+

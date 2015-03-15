@@ -1,0 +1,5 @@
+
+To convert a date to ISO and UTC with ending  Z 
+
+
+select rtrim(cast(CONVERT(varchar(50),DATEADD(second, DATEDIFF(second, GETDATE(), GETUTCDATE()), '08/26/2014 08:18:00'), 127) as varchar))+'Z'

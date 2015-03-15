@@ -1,0 +1,60 @@
+SQL Pivot Example
+The pivot option allows you to take rows of date and pivot them to columns
+
+Given a table
+
+Named: mytbl
+------------------------------------------------------------------------------------
+Containing this data:
+basecard	docdate		linetotal
+107362		2014-01-15	242.250000
+101319		2014-02-17	86.740000
+107362		2014-03-04	355.590000
+107362		2014-03-21	21.060000
+101319		2014-03-25	106.540000
+101319		2015-01-07	132.990000
+107362		2015-01-09	543.780000
+101319		2015-01-14	0.000000
+107362		2015-01-27	262.560000
+107362		2015-01-29	79.680000
+101319		2015-02-23	188.890000
+107362		2015-03-04	322.320000
+107362		2015-03-10	8.130000
+101319		2015-03-11	1817.310000
+101319		2015-03-13	100.900000
+
+------------------------------------------------------------------------------------
+Query:
+
+declare @lyr varchar(4) = year(dateadd(yyyy,-1,getDate()))
+
+select  *
+
+from (select basecard, year(docdate) as [Year],
+			CONVERT(VARCHAR(3), DATEADD(M, month(docdate), -1), 107) As MONTHS,
+			linetotal 
+	  from mytbl -- table name
+	 where year(docdate) >=@lyr
+	  )P
+
+PIVOT
+
+(SUM(linetotal)
+
+FOR MONTHS in (Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,[Dec])) as PVT
+
+order by BaseCard, [year]
+
+------------------------------------------------------------------------------------
+Results:
+
+basecard	Year	Jan	Feb	Mar	Apr
+101319		2014	NULL	86.74	106.54	NULL
+101319		2015	132.99	188.89	1918.21	NULL
+107362		2014	242.25	NULL	376.65	NULL
+107362		2015	886.02	NULL	330.45	NULL
+
+
+
+
+
