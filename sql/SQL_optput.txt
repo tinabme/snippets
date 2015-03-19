@@ -1,0 +1,5 @@
+SQL Using the OUTPU clause to capture the ID of newly inserted data.
+
+INSERT INTO MyTable(Name, Address, phone)
+OUTPUT INSERTED.ID
+VALUES ('Sam Person', '555 Address St', '8135551212')

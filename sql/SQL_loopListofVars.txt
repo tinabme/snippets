@@ -1,0 +1,105 @@
+To loop order a list of variables
+
+Here is a simple T-SQL script for SQL Server that will split a comma separated string and loop on the values.
+It's a simple way to create a array/list of things in SQL Server, and then do something on the values of the list.
+These values can be anything: table names, stored procedures, query...
+
+Application note:  the value list string must end with a comma ","
+
+DECLARE @valueList varchar(8000), @pos INT, @len INT, @value varchar(8000)
+
+SET @valueList = 'aa,bb,1,'
+
+set @pos = 0
+set @len = 0
+
+WHILE CHARINDEX(',', @valueList, @pos+1)>0
+BEGIN
+    set @len = CHARINDEX(',', @valueList, @pos+1) - @pos
+    set @value = SUBSTRING(@valueList, @pos, @len)
+    --SELECT @pos, @len, @value /*this is here for debugging*/
+        
+    PRINT @value --Here is you value
+   
+    set @pos = CHARINDEX(',', @valueList, @pos+@len) +1
+END
+
+
+The output of this script is:
+
+    aa
+    bb
+    c1
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+You can also use this for queries:
+
+DECLARE @valueList varchar(8000), @pos INT, @len INT, @value varchar(20), @valuesm varchar(20), @valuemd varchar(20), @valuelg varchar(20), @valuesht varchar(20)
+Declare @tmptbl table(sku varchar(50),price money, SM money, MD money, LG money, SHT money )
+
+SET @valueList = 'B20203F,B2123F,B21253F,B4011F,B411FF,'
+SET @pos = 0
+SET @len = 0
+
+WHILE CHARINDEX(',', @valueList, @pos+1)>0
+BEGIN
+    set @len = CHARINDEX(',', @valueList, @pos+1) - @pos
+    set @value = SUBSTRING(@valueList, @pos, @len)
+    set @valuesm = SUBSTRING(@valueList, @pos, @len) + '-sm'
+    set @valuemd = SUBSTRING(@valueList, @pos, @len) + '-md'
+    set @valuelg = SUBSTRING(@valueList, @pos, @len) + '-lg'
+    set @valuesht = SUBSTRING(@valueList, @pos, @len) + '-sht'
+    --SELECT @pos, @len, @value /*this is here for debugging*/
+        
+    PRINT @value
+
+	insert into @tmptbl
+	select @value as sku,(select price
+	from catalog_pricing p (nolock) inner join catalog_reference r (nolock) on p.item = r.item
+	where r.companyid = 1
+	and p.companyid = 1
+	and p.priceType = 1
+	and r.ref01 = @value) as price,(select price
+	from catalog_pricing p (nolock) inner join catalog_reference r (nolock) on p.item = r.item
+	where r.companyid = 1
+	and p.companyid = 1
+	and p.priceType = 1
+	and r.ref01 = @valuesm) as SM
+	,(select price
+	from catalog_pricing p (nolock) inner join catalog_reference r (nolock) on p.item = r.item
+	where r.companyid = 1
+	and p.companyid = 1
+	and p.priceType = 1
+	and r.ref01 = @valuemd) as MD
+	,(select price
+	from catalog_pricing p (nolock) inner join catalog_reference r (nolock) on p.item = r.item
+	where r.companyid = 1
+	and p.companyid = 1
+	and p.priceType = 1
+	and r.ref01 = @valuelg) as LG
+	,(select price
+	from catalog_pricing p (nolock) inner join catalog_reference r (nolock) on p.item = r.item
+	where r.companyid = 1
+	and p.companyid = 1
+	and p.priceType = 1
+	and r.ref01 = @valuesht) as SHT
+
+
+ set @pos = CHARINDEX(',', @valueList, @pos+@len) +1
+
+
+END
+
+
+select * from @tmptbl
+
+
+Results
+sku	price	SM	MD	LG	SHT
+B20203F	10.63	10.65	21.25	42.45	NULL
+B2123F	12.23	12.25	24.45	48.85	NULL
+B21253F	12.23	12.25	24.45	48.85	NULL
+B4011F	16.73	16.75	33.45	66.85	NULL
+B411FF	NULL	NULL	NULL	NULL	NULL

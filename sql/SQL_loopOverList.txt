@@ -1,0 +1,29 @@
+LOOP OVER A LIST IN SQL
+
+
+create table #sapodrs (oid bigint)
+
+DECLARE @valueList varchar(8000)
+DECLARE @pos INT
+DECLARE @len INT
+DECLARE @value varchar(8000)
+
+
+SET @valueList = '10725764,10725766,10725774,10725783,'
+
+SET @pos = 0
+SET @len = 0
+
+WHILE CHARINDEX(',', @valueList, @pos+1)>0
+BEGIN
+    set @len = CHARINDEX(',', @valueList, @pos+1) - @pos
+    set @value = SUBSTRING(@valueList, @pos, @len)
+    
+
+    --SELECT @pos, @len, @value /*this is here for debugging*/
+
+
+    INSERT INTO #sapodrs (oid)    
+    VALUES (@value)
+    set @pos = CHARINDEX(',', @valueList, @pos+@len) +1
+END
